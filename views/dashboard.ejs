@@ -1,0 +1,10 @@
+<%- include ('partials/head.ejs') %>
+<p class="logo"><%= title %></p>
+
+<%- include ('partials/nav.ejs') %>
+<% if (messages.success_msg) { %>
+    <% console.log('succcccessssssssssssss') %>
+<% } %>
+<h2>Hello <%= user %>!</h2>
+<a href="/users/logout">Logout</a>
+<%- include ('partials/footer.ejs') %>

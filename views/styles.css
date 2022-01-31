@@ -1,0 +1,62 @@
+html a {
+    text-decoration: none;
+}
+
+html {
+    background-color: rgb(121, 120, 117);
+}
+nav {
+    display: flex;
+    width: 100%;
+    justify-content:space-evenly;
+    font-family: 'Josefin Sans', sans-serif;
+}
+
+.songs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-gap: 24px;
+    flex-grow: 1;
+    margin: 16px;
+}
+
+.song {
+    border-radius: 6px;
+    background-color: cornflowerblue;
+    padding: 1em;
+}
+
+nav a {
+    color:rgb(218, 220, 212);   
+}
+
+nav div {
+    background-color: rgb(94, 157, 162);
+    padding: 1.1em;
+    border-radius: 4px;
+    
+}
+
+.logo {
+    text-align: center;
+    letter-spacing: .5em;
+    font-family: 'Caveat', cursive;
+    font-size: 1.7em;
+    color: papayawhip;
+}
+
+footer {
+    text-align: center;
+    width: 100%;
+    opacity: .6;
+}
+
+/* font-family: 'Alfa Slab One', cursive;
+font-family: 'Caveat', cursive;
+font-family: 'Courgette', cursive;
+font-family: 'Josefin Sans', sans-serif;
+font-family: 'M PLUS 1 Code', sans-serif;
+font-family: 'Merriweather', serif;
+font-family: 'Permanent Marker', cursive;
+font-family: 'Roboto', sans-serif;
+font-family: 'Roboto Mono', monospace; */

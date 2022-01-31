@@ -1,0 +1,30 @@
+<%- include ('partials/head.ejs') %>
+<p class="logo"><%= title %></p>
+
+<%- include ('partials/nav.ejs') %>
+<h2>Log in</h2>
+    <ul>
+    </ul>
+<form action="/users/login" method="POST">
+    <div>
+        <input 
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Email"
+            required
+        />
+    </div>
+    <div>
+        <input 
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Password"
+            required
+        />
+    </div>
+    <input type="submit" value="Login">
+</form>
+    <a href="/users/register">Register</a>
+<%- include ('partials/footer.ejs') %>

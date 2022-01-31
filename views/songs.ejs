@@ -1,0 +1,15 @@
+<%- include ('partials/head.ejs') %>
+<p class="logo"><%= title %></p>
+
+<%- include ('partials/nav.ejs') %>
+<p><%= user %>'s Song Library </p>
+<div class="songs">
+    <% songs.forEach( (song, i) => { %>
+        <div class="song">
+            <div class="song-title"><%= song.title %></div>
+            <div class="song-diff"><%= song.difficulty %></div>
+        </div>
+
+    <% }) %>
+</div>
+<%- include ('partials/footer.ejs') %>
