@@ -11,6 +11,7 @@ let userName = 'Monty';
 const PORT = process.env.PORT || 3000;
 app.use(express.static('views'))
 const initializePassport = require("./passportConfig");
+let songArray = []
 
 initializePassport(passport);
 
@@ -40,11 +41,67 @@ app.get("/", (req, res) => {
   res.render("index", {title});
 });
 
+function resolve(){
+  console.log('resolve');
+}
+function reject(){
+  console.log('reject');
+}
 
+function getSongs(res2) {
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query('SELECT * FROM songs')
+      .then(res => {
+        // client.release()
+        songArray = res.rows;
+        console.log(res.rows)
+        res2.setHeader('Content-Type', 'text/html')
+        res2.render('songs', {title, user: userName, songs: res.rows})
+      })
+      .catch(err => {
+        client.release()
+        console.log(err.stack)
+      })
+  })
+}
+
+// app.get('/songs', async function(req, res) {
+//   console.log("Running test...")
+//   const content = await getSongs();
+//   console.log(content);
+//   // res.send(content)
+//   // console.log(content)
+// });
 
 app.get('/songs', (req,res) => {
-    res.setHeader('Content-Type', 'text/html')
-    res.render('songs', {title, user: userName, songs: [{title: 'Oregon Trail', difficulty: 'beginner'}, {title: 'Lush Life', difficulty: 'advanced'}, {title: 'Space Oddity', difficulty: 'intermediate'}]})
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query('SELECT * FROM songs')
+      .then(res2 => {
+        songArray = res2.rows;
+        console.log(res2.rows)
+      })
+      .catch(err => {
+        client.release()
+        console.log(err.stack)
+      })
+        res.setHeader('Content-Type', 'text/html')
+        songArray = res2.rows;
+        res.render('songs', {title, user: userName, songs: res2.rows});
+        client.release()
+  })
+
+
+        res.render('songs', {title, user: userName, songs: songArray})
+
+  // console.log(songArray);
+  //   res.setHeader('Content-Type', 'text/html')
+    // res.render('songs', {title, user: userName, songs: [{title: 'Oregon Trail', skill_level: 'beginner'}, {title: 'Lush Life', skill_level: 'advanced'}, {title: 'Space Oddity', skill_level: 'intermediate'}]})
 });
 
 app.get('/songs/new', (req,res) => {
