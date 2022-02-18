@@ -1,0 +1,19 @@
+<%- include ('partials/head.ejs') %>
+<p class="logo"><%= title %></p>
+
+<%- include ('partials/nav.ejs') %>
+<div class="show-page-identifier">
+    <div id="page">
+        <div>
+            <h3><%= songObject.title %></h3>
+        <%= songObject.skill_level %>
+        </div>
+        <div class="byline">
+            <%= songObject.creator_name %>
+        </div>
+        <div id='songHtml'>
+            <%- songObject.html %>
+        </div>
+    </div>
+</div>
+<%- include ('partials/footer.ejs') %>

@@ -8,18 +8,19 @@ require("dotenv").config();
 const app = express();
 const title = "Rubato"
 let userName = 'Monty';
+// const puppeteer = require('puppeteer');
 const PORT = process.env.PORT || 3000;
-app.use(express.static('views'))
+app.use(express.static(__dirname + '/views'))
 const initializePassport = require("./passportConfig");
-let songArray = []
-
+let songArray = [];
+let mySongs = [];
+let uId = 0;
 initializePassport(passport);
+let pupFlag = false;
 
-// Middleware
-
-// Parses details from a form
 app.use(express.urlencoded({ extended: false }));
 app.set("view engine", "ejs");
+
 
 app.use(
   session({
@@ -41,75 +42,283 @@ app.get("/", (req, res) => {
   res.render("index", {title});
 });
 
-function resolve(){
-  console.log('resolve');
-}
-function reject(){
-  console.log('reject');
-}
 
-function getSongs(res2) {
+//// my songs
+
+
+app.get('/mysongs', (req,res) => {
+  mySongs = [];
   pool
   .connect()
   .then(client => {
     return client
-      .query('SELECT * FROM songs')
-      .then(res => {
-        // client.release()
-        songArray = res.rows;
-        console.log(res.rows)
-        res2.setHeader('Content-Type', 'text/html')
-        res2.render('songs', {title, user: userName, songs: res.rows})
+      .query('SELECT * FROM songs ORDER BY id DESC')
+      .then(res4 => {
+        songArray = res4.rows;
+        let mySongs = songArray.map(song => {
+          if (song.editors != null) {
+            if (song.editors[song.editors.length - 1] === userName) {
+              return song;
+            }
+          } else {
+            if (song.creator_name === userName) {
+              return song;
+            }
+          }
+        })
+        // console.log(mySongs);
+
+        // selectMySongs();
+        res.render('songs', {title, user: userName, songs: mySongs});
+
       })
       .catch(err => {
         client.release()
-        console.log(err.stack)
+        // console.log(err.stack)
       })
   })
-}
+});
 
-// app.get('/songs', async function(req, res) {
-//   console.log("Running test...")
-//   const content = await getSongs();
-//   console.log(content);
-//   // res.send(content)
-//   // console.log(content)
-// });
 
-app.get('/songs', (req,res) => {
+
+//// my library
+
+app.get('/songlibrary', (req,res) => {
   pool
   .connect()
   .then(client => {
     return client
-      .query('SELECT * FROM songs')
+      .query('SELECT * FROM songs ORDER BY id DESC')
       .then(res2 => {
         songArray = res2.rows;
-        console.log(res2.rows)
+        // console.log(res2.rows)
       })
       .catch(err => {
         client.release()
-        console.log(err.stack)
+        // console.log(err.stack)
       })
-        res.setHeader('Content-Type', 'text/html')
-        songArray = res2.rows;
-        res.render('songs', {title, user: userName, songs: res2.rows});
+  })
+
+  res.render('songs', {title, user: userName, songs: songArray})
+});
+
+
+
+//////   DUPLICATE SONG   /////////////////////////////////////
+
+app.get(/\/songs\/dupe\/[0-9]*/, (req,res) => {
+  const urlArray = req.url.split('/');
+
+
+  const songNumber = parseInt(urlArray[urlArray.length-1]);
+  let songObject;
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query("SELECT * FROM songs WHERE id = $1", [songNumber])
+      .then(res3 => {
+        songObject = res3.rows[0];
+        if (songObject.editors == null) {
+        songObject['editors'] = [userName];
+
+        } else {
+        songObject.editors.push(userName);
+
+        }
+        // console.log('songObject' , songObject);
+        res.setHeader('Content-Type', 'text/html');
+        res.render('new', {title, user: userName, songObject});
+        // return songObject;
+      })
+      .catch(err => {
         client.release()
+        // console.log(err)
+      })
   })
 
 
-        res.render('songs', {title, user: userName, songs: songArray})
-
-  // console.log(songArray);
-  //   res.setHeader('Content-Type', 'text/html')
-    // res.render('songs', {title, user: userName, songs: [{title: 'Oregon Trail', skill_level: 'beginner'}, {title: 'Lush Life', skill_level: 'advanced'}, {title: 'Space Oddity', skill_level: 'intermediate'}]})
-});
-
-app.get('/songs/new', (req,res) => {
-    res.setHeader('Content-Type', 'text/html')
-    res.render('new', {title, user: userName})
 });
 
 
+//////   EDIT SONG    /////////////////////////////////////
+
+app.get(/\/songs\/edit\/[0-9]*/, (req,res) => {
+  const urlArray = req.url.split('/');
+  const songNumber = parseInt(urlArray[urlArray.length-1]);
+  let songObject;
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query("SELECT * FROM songs WHERE id = $1", [songNumber])
+      .then(res3 => {
+        songObject = res3.rows[0];
+        res.setHeader('Content-Type', 'text/html')
+        res.render('edit', {title, songObject})
+        // return songObject;
+      })
+      .catch(err => {
+        client.release()
+        // console.log(err)
+      })
+  })
+});
+
+//////   SHOW SONG    /////////////////////////////////////
+
+app.get(/\/songs\/[0-9]*/, (req,res) => { 
+  const urlArray = req.url.split('/');
+  const songNumber = parseInt(urlArray[urlArray.length-1]);
+  let songObject;
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query("SELECT * FROM songs WHERE id = $1", [songNumber])
+      .then(res3 => {
+        songObject = res3.rows[0];
+        res.setHeader('Content-Type', 'text/html')
+        res.render('show', {title, songObject})
+        // return songObject;
+      })
+      .catch(err => {
+        client.release()
+        // console.log(err)
+      })
+  })
+});
+
+///////////////////////////  NEW SONG  /////////////////////////
+
+app.post('/songs/new', (req,res) => {
+  // console.log(req);
+  let vis = false;
+  let dup = false;
+  if (req.body.visible) {
+    vis = true;
+    if (req.body.dupable) {
+      dup = true;
+    }
+  }
+    pool
+    .connect()
+    .then(client => {
+      return client
+        .query(
+        `INSERT INTO songs (title, skill_level, html, creator, creator_name, visible, dupable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [req.body.title, req.body.skill_level, `<div class="song-title"> HTML from the server </div>`, uId, userName, vis, dup])
+        .catch(err => {
+          client.release()
+          // console.log(err.stack)
+        })
+      })
+
+  res.setHeader('Content-Type', 'text/html')
+  res.render('new', {title, user: userName})
+});
+
+app.post(/\/songs\/dupe\/[0-9]*/, (req,res) => {
+  // console.log(req.body)
+  let vis = false;
+  let dup = false;
+  if (req.body.visible) {
+    vis = true;
+    if (req.body.dupable) {
+      dup = true;
+    }
+  }
+    pool
+    .connect()
+    .then(client => {
+      return client
+        .query(
+        `INSERT INTO songs (title, skill_level, html, creator, creator_name, visible, dupable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [req.body.title, req.body.skill_level, `<div class="song-title"> HTML from the server </div>`, uId, userName, vis, dup])
+        .catch(err => {
+          client.release()
+          // console.log(err.stack)
+        })
+      })
+
+  res.setHeader('Content-Type', 'text/html')
+  res.render('new', {title, user: userName})
+});
+
+/////////////////////  DELETE SONG  //////////////
+
+app.get(/\/songs\/delete\/[0-9]*/, (req,res) => {
+  const urlArray = req.url.split('/');
+
+
+  const songNumber = parseInt(urlArray[urlArray.length-1]);
+    pool
+    .connect()
+    .then(client => {
+      return client
+        .query(
+        `DELETE FROM songs WHERE id=$1`, [songNumber],
+        )
+        .then(res2 => {
+          pool
+          .connect()
+          .then(client => {
+            return client
+              .query('SELECT * FROM songs ORDER BY id DESC')
+              .then(res2 => {
+                songArray = res2.rows;
+                // console.log(res2.rows)
+              })
+              .catch(err => {
+                client.release()
+                // console.log(err.stack)
+              })
+          // res2.setHeader('Content-Type', 'text/html')
+          // res2.render("songs", {title, user: userName, songs:songArray})
+          })
+          // res.redirect("/songs");
+        })
+        .catch(err => {
+          client.release()
+          // console.log(err.stack)
+        })
+      })
+
+
+});
+
+///////////////// SONGS INDEX  //////////////////////////////////////////////
+
+
+///  all songs
+
+app.get('/allsongs', (req,res) => {
+  pool
+  .connect()
+  .then(client => {
+    return client
+      .query('SELECT * FROM songs ORDER BY id DESC')
+      .then(res2 => {
+        songArray = res2.rows;
+        // console.log(res2.rows)
+      })
+      .catch(err => {
+        client.release()
+        // console.log(err.stack)
+      })
+  })
+  res.render('songs', {title, user: userName, songs: songArray})
+  
+  if (pupFlag === false) {
+    pupFlag = true;
+    // selectAllSongs();
+  }
+});
+
+
+/////////////////////////  AUTHENTICATION ROUTES  ///////////////////////////
 
 
 app.get("/users/register", checkAuthenticated, (req, res) => {
@@ -123,6 +332,7 @@ app.get("/users/login", checkAuthenticated, (req, res) => {
 });
 
 app.get("/users/dashboard", checkNotAuthenticated, (req, res) => {
+  uId = req.user.id;
   userName = req.user.name;
   res.render("dashboard", { title, user: userName });
 });
@@ -137,12 +347,12 @@ app.post("/users/register", async (req, res) => {
 
   let errors = [];
 
-  console.log({
-    name,
-    email,
-    password,
-    password2
-  });
+  // console.log({
+  //   name,
+  //   email,
+  //   password,
+  //   password2
+  // });
 
   if (!name || !email || !password || !password2) {
     errors.push({ message: "Please enter all fields" });
@@ -160,7 +370,7 @@ app.post("/users/register", async (req, res) => {
     res.render("register", { errors, name, email, password, password2, title });
   } else {
     hashedPassword = await bcrypt.hash(password, 10);
-    console.log(hashedPassword);
+    // console.log(hashedPassword);
     // Validation passed
     pool.query(
       `SELECT * FROM users
@@ -168,9 +378,9 @@ app.post("/users/register", async (req, res) => {
       [email],
       (err, results) => {
         if (err) {
-          console.log(err);
+          // console.log(err);
         }
-        console.log(results.rows);
+        // console.log(results.rows);
 
         if (results.rows.length > 0) {
           return res.render("register", {
@@ -186,7 +396,7 @@ app.post("/users/register", async (req, res) => {
               if (err) {
                 throw err;
               }
-              console.log(results.rows);
+              // console.log(results.rows);
               req.flash("success_msg", "You are now registered. Please log in");
               res.redirect("/users/login");
             }
@@ -223,3 +433,45 @@ function checkNotAuthenticated(req, res, next) {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+
+async function selectAllSongs(){
+  const browser = await puppeteer.launch({ headless: true }); 
+  const page = await browser.newPage();
+  await page.goto("http://localhost:5000/allsongs",{waitUntil: 'networkidle0'});
+
+  // console.log("start evaluate javascript")
+  /** @type {string[]} */
+  var productNames = await page.evaluate(()=>{
+      // const allsongs = document.querySelector('#allsongs');
+      // const mysongs = document.querySelector('#mysongs');
+      // const songslibrary = document.querySelector('#songslibrary');
+     
+      // allsongs.classList = "songs-head"
+      // mysongs.classList = "songs-head songs-head-disabled"
+      // songslibrary.classList = "songs-head songs-head-disabled"
+  })
+  .catch((err) => {
+    // console.log(err)
+  })
+  // return productNames;
+  browser.close()
+} 
+
+async function selectMySongs(){
+  const browser = await puppeteer.launch({ headless: true }); 
+  const page = await browser.newPage();
+  await page.goto("http://localhost:5000/allsongs",{waitUntil: 'networkidle2'});
+
+  console.log("start evaluate javascript mySongs")
+  /** @type {string[]} */
+  const classes = await page.evaluate(() => {
+    return document.querySelector("#mySongs").classList;
+  });
+
+  // console.log(classes);
+
+    await document.querySelector("#mySongs").remove('songs-head-disabled');
+  
+  await browser.close()
+} 

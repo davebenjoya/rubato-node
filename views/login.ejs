@@ -2,9 +2,8 @@
 <p class="logo"><%= title %></p>
 
 <%- include ('partials/nav.ejs') %>
+<div class="panel">
 <h2>Log in</h2>
-    <ul>
-    </ul>
 <form action="/users/login" method="POST">
     <div>
         <input 
@@ -27,4 +26,6 @@
     <input type="submit" value="Login">
 </form>
     <a href="/users/register">Register</a>
+
+</div>
 <%- include ('partials/footer.ejs') %>

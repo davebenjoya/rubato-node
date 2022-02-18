@@ -1,15 +1,115 @@
 <%- include ('partials/head.ejs') %>
 <p class="logo"><%= title %></p>
-
 <%- include ('partials/nav.ejs') %>
-<p><%= user %>'s Song Library </p>
+<div id="tabs">
+    <!-- <div class="songs-heads">
+        <button id= "allsongs" class="songs-head" onclick="selectAll()">All Songs</button>
+        <button id= "mysongs" class="songs-head songs-head-disabled" onclick="selectMine()" value="My Songs">My Songs</button>
+        <button id= "songslibrary" class="songs-head songs-head-disabled" onclick="selectLibrary()" value="My Library">Song Library</button>
+    </div> -->
+    <div class="songs-heads">
+        <p id= "allsongs" class="songs-head"><a href="/allsongs">All Songs</a></p>
+        <p id= "mysongs" class="songs-head songs-head-disabled"><a href="/mysongs">My Songs</a></p>
+        <p id= "songslibrary" class="songs-head songs-head-disabled"><a href="/songlibrary"> My Library</a></p>
+    </div>
+    <div id="new-song-btn">
+        <p class="songs-head"><a href="/songs/new"><i class="fa-solid fa-circle-plus"></i></a></p>
+    </div>
+</div>
+
+<!-- <p class="loggedin">Logged in as <%= user %></p> -->
+<!-- 
+<select name="showSongs" id="showSongs" onchange="selectFilter(() => {console.log('deeeewwewweeee')})">
+    <option value="allsongs" selected>All songs</option>
+    <option value="mysongs">My songs</option>
+</select> -->
+
+<script type="text/javascript">
+    function selectAll() {
+        event.preventDefault();
+        document.querySelector("#allsongs").classList = "songs-head";
+        document.querySelector("#mysongs").classList = "songs-head songs-head-disabled";
+        document.querySelector("#songslibrary").classList = "songs-head songs-head-disabled";
+        return 1;
+    }
+    function selectMine() {
+        event.preventDefault();
+        document.querySelector("#allsongs").classList = "songs-head songs-head-disabled";
+        document.querySelector("#mysongs").classList = "songs-head";
+        document.querySelector("#songslibrary").classList = "songs-head songs-head-disabled";
+        return 1;
+    }
+    function selectLibrary() {
+        event.preventDefault();
+        document.querySelector("#allsongs").classList = "songs-head songs-head-disabled";
+        document.querySelector("#mysongs").classList = "songs-head songs-head-disabled";
+        document.querySelector("#songslibrary").classList = "songs-head";
+        return 1;
+    }
+    let show = true;
+    function selectFilter() { 
+        show = changeSongs()
+        console.log('show: ', show)
+        // return show;
+    } 
+
+
+</script>
+
 <div class="songs">
+    
+   
+    <% let showAll = true %>
     <% songs.forEach( (song, i) => { %>
+        <% if (typeof song !== 'undefined') { %>
+        <% if (song.visible === true || song.creator_name === user) { %>
         <div class="song">
             <div class="song-title"><%= song.title %></div>
-            <div class="song-diff"><%= song.skill_level %></div>
-        </div>
+            <div class="skill-icons">
+            <div class="song-skill"><%= song.skill_level %></div>
+            <div class="icons">
+                <% const songUrl = "/songs/" + song.id %>
+                <% const dupeUrl = "/songs/dupe/" + song.id %>
+                <% const deleteUrl = "/songs/delete/" + song.id %>
+                <% const editUrl = "/songs/edit/" + song.id %>
+                <a href=<%= songUrl %>><i class="fa-solid fa-magnifying-glass index-icon"></i></a>
 
+                <% if (song.dupable === true || song.creator_name === user ||  (song.editors != null  && song.editors[song.editors.length - 1] === user)) { %>
+                <a href=<%= dupeUrl %>><i class="fa-regular fa-copy index-icon"></i></a>
+                <% } %>
+                
+                <% let editTrash = false %> 
+                <% if (song.editors == null  && song.creator_name === user) editTrash = true   %>
+                    <% if (song.editors != null  && song.editors[song.editors.length - 1] === user) editTrash = true  %>
+                    <% if ( editTrash === true) { %>
+                        <a href=<%= editUrl %>><i class="fa-solid fa-pen-to-square index-icon"></i></a>
+                        <a href=<%= deleteUrl %>><i class="fa-regular fa-trash-can index-icon"></i></a> 
+                    <% } %>
+    
+
+
+            </div>
+            </div>
+            <% let edArray = [] %>
+            <% let edString = "" %> 
+             <% if (song.editors !== null && typeof song.editors !== 'undefined' && typeof song.editors == 'object') { %>
+                <% edArray = Object.values(song.editors) %>    
+               <% edArray.forEach(editor => { %>
+                    <%  edString += `<i class="fa-solid fa-angle-right index-icon"></i> `  %>
+                    <%  edString += editor + " " %>
+                <% }) %>
+
+                <div class="song-creator"><%= song.creator_name %>  <%- edString %></div>
+              
+            <% } else { %>
+                <div class="song-creator"><%= song.creator_name %></div>
+            <% } %>
+            
+        </div>
+        <% } %>
+
+
+        <% } %>
     <% }) %>
 </div>
 <%- include ('partials/footer.ejs') %>

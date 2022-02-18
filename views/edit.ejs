@@ -1,0 +1,40 @@
+<%- include ('partials/head.ejs') %>
+<p class="logo"><%= title %></p>
+
+<%- include ('partials/nav.ejs') %>
+<div class="edit-page-identifier">
+    <div id="page">
+        <div>
+            <form action="/songs/update">
+            <h3><input type="text" value="<%= songObject.title %>"></h3>
+            <select name="skill_level" id="skill_level">
+                <% if (songObject.skill_level === 'beginner') { %> 
+                    <option value="beginner" selected >Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                <% } %>
+                <% if (songObject.skill_level === 'intermediate') { %>
+                    <option value="beginner" >Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                <% } %>
+                <% if (songObject.skill_level === 'advanced') { %> 
+                    <option value="beginner" >Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced" selected>Advanced</option>
+                <% } %>
+            </select>
+
+            <button type="submit" id="save-changes">Save changes</button>
+
+            </form>
+        </div>
+        <div class="byline">
+            <%= songObject.creator_name %>
+        </div>
+        <div id="songHtml">
+            <%- songObject.html %>
+        </div>
+    </div>
+</div>
+<%- include ('partials/footer.ejs') %>
